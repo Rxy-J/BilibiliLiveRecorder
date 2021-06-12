@@ -1,4 +1,4 @@
-from Live import BiliBiliLive
+from Live import BiliBiliLive, BilibiliLive
 import os
 import requests
 import time
@@ -16,6 +16,9 @@ RECORD_FILE_PATH = REAL_PATH + "/recordFiles/"
 DEFAULT_CHECK_INTERVAL = 60
 TIMEOUT = 60*5
 VERSION = "1.5.0"
+FFMPEG = os.path.join(REAL_PATH, "ffmpeg.exe")
+TRANSFORM = "{0} -y -i {1} -c copy {2}"
+
 
 class BiliBiliLiveRecorder(BiliBiliLive, threading.Thread):
     def __init__(self, room_id, checkInterval=DEFAULT_CHECK_INTERVAL, recordFilePath=RECORD_FILE_PATH, timeout=TIMEOUT):
@@ -27,6 +30,10 @@ class BiliBiliLiveRecorder(BiliBiliLive, threading.Thread):
         self.isRecord = False
         self.timeout = timeout
         self.downloadSize = 0
+    
+    def flv2mp4(flv, mp4):
+        command = TRANSFORM.format(FFMPEG, "\""+flv+"\"", "\""+mp4+"\"")
+        os.system(command)
 
     def check(self):
         try:
@@ -69,9 +76,11 @@ class BiliBiliLiveRecorder(BiliBiliLive, threading.Thread):
                 while not self.check():
                     time.sleep(self.checkInterval)
                 streamTime = datetime.now().strftime("%Y-%m-%d %H%M")
-                filename = self.recordFilePath+"{0} {1}.flv".format(streamTime, self.roomName)
-                self.record(filename)
-                self.log(self.room_id, '录制完成' + filename).success()
+                filename_flv = self.recordFilePath+"{0} {1}.flv".format(streamTime, self.roomName)
+                filename_mp4 = self.recordFilePath+"{0} {1}.mp4".format(streamTime, self.roomName)
+                self.record(filename_flv)
+                self.log(self.room_id, '录制完成' + filename_flv).success()
+                self.flv2mp4(filename_flv, filename_mp4)
             except Exception as e:
                 self.log(self.room_id, str(e)).error()
 
@@ -137,9 +146,10 @@ class Monitor(threading.Thread):
 
 if __name__ == '__main__':
     try:
-    # if 1:
         if not os.path.exists(RECORD_FILE_PATH) :
             os.mkdir(RECORD_FILE_PATH)
+        if not os.path.exists(FFMPEG):
+            raise Exception("ffmpeg.exe未找到，请检查本程序所在目录下是否有ffmpeg.exe")
         with open(REAL_PATH+"/config.json") as f:
             data = json.load(f)
         recorder = BiliBiliLiveRecorder(data["room_id"])
@@ -153,3 +163,4 @@ if __name__ == '__main__':
     except Exception as e:
         print(str(e)+"==>"+str(e.__traceback__.tb_lineno))
     os.system("pause")
+
