@@ -15,7 +15,7 @@ LOG_PATH = REAL_PATH+"/log.log"
 RECORD_FILE_PATH = REAL_PATH + "/recordFiles/"
 DEFAULT_CHECK_INTERVAL = 60
 TIMEOUT = 60*5
-VERSION = "1.5.1"
+VERSION = "1.5.2"
 FFMPEG = os.path.join(REAL_PATH, "ffmpeg.exe")
 TRANSFORM = "{0} -y -i {1} -c copy {2}"
 
@@ -31,7 +31,7 @@ class BiliBiliLiveRecorder(BiliBiliLive, threading.Thread):
         self.timeout = timeout
         self.downloadSize = 0
     
-    def flv2mp4(flv, mp4):
+    def flv2mp4(self, flv, mp4):
         command = TRANSFORM.format(FFMPEG, "\""+flv+"\"", "\""+mp4+"\"")
         os.system(command)
 
